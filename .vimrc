@@ -8,6 +8,11 @@ call vundle#rc()
 " required! 
 Bundle 'gmarik/vundle'
 
+" Games
+Bundle 'sudoku_game'
+"Bundle 'Sudoku Solver'
+Bundle 'timofurrer/sudoku.vim'
+
 " Files manager
 Bundle 'majutsushi/tagbar'
 Bundle 'L9'
@@ -23,19 +28,20 @@ Bundle 'cschlueter/vim-mustang'
 Bundle 'godlygeek/csapprox'
 
 " Utilities
-Bundle "tsaleh/vim-matchit"
+Bundle "edsono/vim-matchit"
 Bundle 'Raimondi/delimitMate'
 
 " Syntax Commenter
 Bundle 'vim-scripts/tComment'
 
 " HTML Development 
+Bundle 'mattn/emmet-vim'
 Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
 
 " Universal Syntax Checker + Completion
-"Bundle 'UltiSnips'
+Bundle 'UltiSnips'
 Bundle 'scrooloose/syntastic'
-"Bundle "Shougo/neocomplcache"
+"Bundle 'Shougo/neocomplcache'
 
 " Python Syntax Checker
 Bundle 'kevinw/pyflakes-vim'
@@ -165,7 +171,7 @@ set gfn=Liberation\ Mono\ 10
 
 set encoding=utf8
 try
-    lang en_US
+    lang pt_BR
 catch
 endtry
 
@@ -395,12 +401,17 @@ autocmd InsertLeave * if pumvisible() == 0|pclose|endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" emmet config:
+" let g:user_emmet_mode='n'    "only enable normal mode functions.
+" let g:user_emmet_mode='inv'  "enable all functions, which is equal to
+let g:user_emmet_mode='a'    "enable all function in all mode.
+
 " Pep8 using F6
 " You can change with this :
 let g:pep8_map='<F6>'
 
 " Pydiction
-let g:pydiction_location='/home/ubuntu/.vim/bundle/Pydiction/complete-dict'
+let g:pydiction_location='/home/joaomanoel/.vim/bundle/Pydiction/complete-dict'
 
 """" PYTHON STYLE """"
 let python_highlight_all=1 " Enable all plugin's highlighting.
@@ -499,7 +510,7 @@ nnoremap <leader>l :TagbarToggle<CR>
 "
 autocmd WinEnter * call s:CloseIfOnlyNerdTreeLeft()
 
-" Use leader + . for opening File Explorer
+" Use leader + t for opening File Explorer
 map <leader>t :NERDTreeTabsToggle<CR>
 let g:NERDTreeShowBookmarks=1
 let g:NERDTreeMouseMode=3
@@ -593,5 +604,66 @@ if has("autocmd")
                 \ windo call FixMiniBufExplorerTitle() |
                 \ exec oldwinnr . " wincmd w"
 endif
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""}}}
 
+"""""""""""""""""""""""""""""""""""
+" BEGIN ENCRYPT/DECRYPT CONFIG
+"""""""""""""""""""""""""""""""""""
+
+" Encrypt in visual mode with ,ctrl-e
+vnoremap <Leader><C-e> :!gpg2 --batch --no-tty --yes --default-key 607A5E65 --default-recipient-self --armor --encrypt 2>/dev/null<CR>
+
+" Decrypt in visual mode with ,ctrl-d
+vnoremap <Leader><C-d> :!gpg2 --batch --no-tty --yes --default-key 607A5E65 --default-recipient-self --armor --decrypt 2>/dev/null<CR>
+
+" config ,F2 to use buffer for encrypt/decrypt:
+nnoremap <Leader><F2> :set viminfo=<CR>:set noswapfile noundofile nobackup<CR>:set bin<CR>:let ch_save = &ch\|set ch=2<CR>
+
+" Transparent editing of gpg encrypted files.
+" By Wouter Hanegraaff
+augroup encrypted
+    au!
+
+    " First make sure nothing is written to ~/.viminfo while editing
+    " an encrypted file.
+    autocmd BufReadPre,FileReadPre *.gpg set viminfo=
+    " We don't want a various options which write unencrypted data to disk
+    autocmd BufReadPre,FileReadPre *.gpg set noswapfile noundofile nobackup
+
+    " Switch to binary mode to read the encrypted file
+    autocmd BufReadPre,FileReadPre *.gpg set bin
+    autocmd BufReadPre,FileReadPre *.gpg let ch_save = &ch|set ch=2
+    " (If you use tcsh, you may need to alter this line.)
+    autocmd BufReadPost,FileReadPost *.gpg '[,']!gpg --batch --no-tty --yes --default-key 607A5E65 --default-recipient-self --armor --decrypt 2>/dev/null
+
+    " Switch to normal mode for editing
+    autocmd BufReadPost,FileReadPost *.gpg set nobin
+    autocmd BufReadPost,FileReadPost *.gpg let &ch = ch_save|unlet ch_save
+    autocmd BufReadPost,FileReadPost *.gpg execute ":doautocmd BufReadPost " . expand("%:r")
+
+    " Convert all text to encrypted text before writing
+    " (If you use tcsh, you may need to alter this line.)
+    autocmd BufWritePre,FileWritePre *.gpg '[,']!gpg --batch --no-tty --yes --default-key 607A5E65 --default-recipient-self --armor --encrypt 2>/dev/null
+    " Undo the encryption so we are back in the normal text, directly
+    " after the file has been written.
+    autocmd BufWritePost,FileWritePost *.gpg u
+augroup END
+
+augroup CPT
+    au!
+    au BufReadPre *.cpt set bin
+    au BufReadPre *.cpt set viminfo=
+    au BufReadPre *.cpt set noswapfile
+    au BufReadPost *.cpt let $vimpass = inputsecret("Password: ")
+    au BufReadPost *.cpt silent '[,']!ccrypt -cb -E vimpass
+    au BufReadPost *.cpt set nobin
+    au BufWritePre *.cpt set bin
+    au BufWritePre *.cpt '[,']!ccrypt -e -E vimpass
+    au BufWritePost *.cpt u
+    au BufWritePost *.cpt set nobin
+augroup END
+
+"""""""""""""""""""""""""""""""""""
+" END ENCRYPT/DECRYPT CONFIG
+"""""""""""""""""""""""""""""""""""
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""}}}
